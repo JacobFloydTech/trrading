@@ -1,7 +1,7 @@
-with open("out", "r+") as f:
+with open("out.txt", "r+") as f:
     data = f.readlines()
     data = list(filter(lambda x: x.startswith("Buying") or x.startswith("Selling"), data))
-    data = list(map(lambda x: x.split()[-1], data))
+    data = list(map(lambda x: x.split()[2], data))
     print(data)
     buying, selling = [],[]
     for i in range(len(data)):
@@ -15,5 +15,6 @@ with open("out", "r+") as f:
         y= float(y)
         diff = y-x
         eq = diff/((y+x)/2)
+        print(eq)
         total += eq
     print(300*(total+1))

@@ -11,18 +11,24 @@ import os
 import ta 
 import pandas as pd 
 
+from mexcTest import createOrder
+from mexc_sdk import Spot
+spot = Spot(api_key='mx0vglwFI2Jc5NmUTX', api_secret='8ec86fe4c3844502b0b24f6da872cad3')
+
+
 bars = tv.get_hist("XRPUSDT", "MEXC", Interval.in_1_minute, 100) 
 bars.reset_index(drop=False, inplace=True)
 shortEmaLength = 150
 longEmaLength = 300
-stochLength = 8
+stochLength = 14
 stochSmoothK = 3
 stochSmoothD = 3
 
 buying = False
+xrp = 0
 closePrice = 0 
 def process_kline(decoded):
-    global bars, buying, closePrice
+    global bars, buying, closePrice, xrp
     start = int(decoded["windowStart"])
     bar = {
         "datetime": datetime.fromtimestamp(start),
@@ -42,13 +48,17 @@ def process_kline(decoded):
     bars['shortEMA'] = ta.trend.ema_indicator(bars['close'], shortEmaLength, fillna=True)
     bars['longEMA'] = ta.trend.ema_indicator(bars['close'], longEmaLength, fillna=True)
     row = bars.iloc[-1]
-
+    #print(bars.iloc[-2]['stoch_rsi_k'], row['stoch_rsi_k'])
     if not buying and bars.iloc[-2]['stoch_rsi_k'] < 0.2 and row['stoch_rsi_k'] > 0.2:
-        print(f"Buying at {row['close']}")
         buying = True
         closePrice = row['close']
-    elif buying and row['stoch_rsi_k'] > 0.3:
-        print(f"Selling at {row['close']}")
+        createOrder('market', 'buy', '30')
+        trade = spot.account_trade_list(symbol="XRPUSDT", options={ "limit": 1})[0]
+        price = trade['price']
+        qty = trade['qty']
+        createOrder( "limit", "sell", qty, float(price)+0.0001)
+    elif buying and (row['close'] >= float(closePrice)+0.0002):
+        #createOrder('market', 'sell' ,xrp)
         buying = False
 
 
